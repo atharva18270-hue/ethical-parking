@@ -41,16 +41,19 @@ def save_to_github(new_record):
     print("GitHub Save Status Code:", response.status_code)
     print("GitHub Response:", response.text)
 # --- Your Flask Routes Go Below ---
-@app.route("/")
-def index():
-    return render_template("index.html")
-
-@app.route("/api/ledger", methods=["GET"])
-def get_ledger():
-    data, _ = get_github_data()
-    return jsonify(data)
-
-# (And your booking route that calls save_to_github(new_record) when someone parks!)
-
-if __name__ == "__main__":
-    app.run(debug=True)
+@app.route("/api/park", methods=["POST"])
+def park_vehicle():
+    # Grab data coming from your frontend form
+    req_data = request.json or request.form
+    
+    new_record = {
+        "vehicle": req_data.get("vehicle", "Unknown"),
+        "slotId": req_data.get("slotId", "N/A"),
+        "duration": req_data.get("duration", "N/A"),
+        "total": req_data.get("total", "0")
+    }
+    
+    # This triggers your GitHub storage function!
+    save_to_github(new_record)
+    
+    return jsonify({"success": True, "message": "Booked and saved to GitHub!"})
