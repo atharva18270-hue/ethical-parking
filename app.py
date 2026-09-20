@@ -1,102 +1,34 @@
-from datetime import datetime
-import sqlite3
-from flask import Flask, jsonify, render_template, request
+import os
+import requests
+import base64
+import json
 
-app = Flask(__name__)
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
+REPO_NAME = "atharva18270-hue/ethical-parking"  # Your GitHub username/repo
+FILE_PATH = "data.json"
 
+def get_github_data():
+    url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+    headers = {"Authorization": f"Bearer {GITHUB_TOKEN}"}
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        file_content = response.json()
+        decoded_content = base64.b64decode(file_content["content"]).decode("utf-8")
+        return json.loads(decoded_content), file_content["sha"]
+    return [], None
 
-# Initialize SQLite Database automatically
-def init_db():
-  conn = sqlite3.connect("parking.db")
-  cursor = conn.cursor()
-  cursor.execute("""
-        CREATE TABLE IF NOT EXISTS ledger (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            txn TEXT,
-            slotId TEXT,
-            vehicle TEXT,
-            duration TEXT,
-            total INTEGER,
-            date TEXT,
-            time TEXT
-        )
-    """)
-  conn.commit()
-  conn.close()
-
-
-init_db()
-
-
-@app.route("/")
-def index():
-  return render_template("index.html")
-
-
-# API: Store a parking record when a car is booked
-@app.route("/api/park", methods=["POST"])
-def park_vehicle():
-  data = request.json
-  now = datetime.now()
-  txn = f"TXN-{int(now.timestamp())}"
-  date_str = now.strftime("%Y-%m-%d")
-  time_str = now.strftime("%H:%M:%S")
-
-  conn = sqlite3.connect("parking.db")
-  cursor = conn.cursor()
-  cursor.execute(
-      """
-        INSERT INTO ledger (txn, slotId, vehicle, duration, total, date, time)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """,
-      (
-          txn,
-          data.get("slotId"),
-          data.get("vehicle"),
-          data.get("duration"),
-          data.get("total"),
-          date_str,
-          time_str,
-      ),
-  )
-  conn.commit()
-  conn.close()
-
-  return jsonify({
-      "success": True,
-      "record": {
-          "txn": txn,
-          "slotId": data.get("slotId"),
-          "vehicle": data.get("vehicle"),
-          "duration": data.get("duration"),
-          "total": data.get("total"),
-          "date": f"{date_str} {time_str}",
-      },
-  })
-
-
-# API: Fetch all past parking records for the Ledger view
-@app.route("/api/ledger", methods=["GET"])
-def get_ledger():
-  conn = sqlite3.connect("parking.db")
-  conn.row_factory = sqlite3.Row
-  cursor = conn.cursor()
-  cursor.execute("SELECT * FROM ledger ORDER BY id DESC")
-  rows = cursor.fetchall()
-  conn.close()
-
-  ledger_list = []
-  for row in rows:
-    ledger_list.append({
-        "txn": row["txn"],
-        "slotId": row["slotId"],
-        "vehicle": row["vehicle"],
-        "duration": row["duration"],
-        "total": row["total"],
-        "date": f"{row['date']} at {row['time']}",
-    })
-  return jsonify(ledger_list)
-
-
-if __name__ == "__main__":
-  app.run(debug=True, port=3000)
+def save_to_github(new_record):
+    data, sha = get_github_data()
+    data.insert(0, new_record)  # Add new booking to the top
+    
+    url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+    headers = {"Authorization": f"Bearer {GITHUB_TOKEN}"}
+    
+    updated_content = base64.b64encode(json.dumps(data, indent=2).encode("utf-8")).decode("utf-8")
+    
+    payload = {
+        "message": "Update parking ledger data.json",
+        "content": updated_content,
+        "sha": sha
+    }
+    requests.put(url, headers=headers, json=payload)
