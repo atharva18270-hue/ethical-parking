@@ -2,9 +2,9 @@ import os
 import requests
 import base64
 import json
-from flask import Flask, render_template, request, jsonify  # Make sure 'app' is defined here!
+from flask import Flask, render_template, request, jsonify
 
-app = Flask(__name__)  # <-- This is what Gunicorn looks for!
+app = Flask(__name__)
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 REPO_NAME = "atharva18270-hue/ethical-parking"
@@ -32,18 +32,24 @@ def save_to_github(new_record):
     payload = {
         "message": "Update parking ledger data.json",
         "content": updated_content,
-        "sha": sha  # Required by GitHub so it knows which version to overwrite
+        "sha": sha
     }
-    
-    response = requests.put(url, headers=headers, json=payload)
-    
-    # Print out what GitHub says so we can see it in Render logs
-    print("GitHub Save Status Code:", response.status_code)
-    print("GitHub Response:", response.text)
-# --- Your Flask Routes Go Below ---
+    requests.put(url, headers=headers, json=payload)
+
+# 1. ROUTE FOR THE HOMEPAGE (Fixes the 404 on the main link)
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+# 2. ROUTE FOR FETCHING LEDGER DATA
+@app.route("/api/ledger", methods=["GET"])
+def get_ledger():
+    data, _ = get_github_data()
+    return jsonify(data)
+
+# 3. ROUTE FOR SAVING BOOKINGS TO GITHUB
 @app.route("/api/park", methods=["POST"])
 def park_vehicle():
-    # Grab data coming from your frontend form
     req_data = request.json or request.form
     
     new_record = {
@@ -53,7 +59,8 @@ def park_vehicle():
         "total": req_data.get("total", "0")
     }
     
-    # This triggers your GitHub storage function!
     save_to_github(new_record)
-    
-    return jsonify({"success": True, "message": "Booked and saved to GitHub!"})
+    return jsonify({"success": True, "message": "Saved to GitHub!"})
+
+if __name__ == "__main__":
+    app.run(debug=True)
