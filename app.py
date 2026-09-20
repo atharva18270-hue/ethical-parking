@@ -2,9 +2,12 @@ import os
 import requests
 import base64
 import json
+from flask import Flask, render_template, request, jsonify  # Make sure 'app' is defined here!
+
+app = Flask(__name__)  # <-- This is what Gunicorn looks for!
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
-REPO_NAME = "atharva18270-hue/ethical-parking"  # Your GitHub username/repo
+REPO_NAME = "atharva18270-hue/ethical-parking"
 FILE_PATH = "data.json"
 
 def get_github_data():
@@ -32,3 +35,18 @@ def save_to_github(new_record):
         "sha": sha
     }
     requests.put(url, headers=headers, json=payload)
+
+# --- Your Flask Routes Go Below ---
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/api/ledger", methods=["GET"])
+def get_ledger():
+    data, _ = get_github_data()
+    return jsonify(data)
+
+# (And your booking route that calls save_to_github(new_record) when someone parks!)
+
+if __name__ == "__main__":
+    app.run(debug=True)
