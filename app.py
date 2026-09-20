@@ -32,10 +32,14 @@ def save_to_github(new_record):
     payload = {
         "message": "Update parking ledger data.json",
         "content": updated_content,
-        "sha": sha
+        "sha": sha  # Required by GitHub so it knows which version to overwrite
     }
-    requests.put(url, headers=headers, json=payload)
-
+    
+    response = requests.put(url, headers=headers, json=payload)
+    
+    # Print out what GitHub says so we can see it in Render logs
+    print("GitHub Save Status Code:", response.status_code)
+    print("GitHub Response:", response.text)
 # --- Your Flask Routes Go Below ---
 @app.route("/")
 def index():
