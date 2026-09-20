@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ethical Parking Slot | Smart IoT Infrastructure</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        canvas: '#020c1a',
+                        surface: '#072142',
+                        card: '#092952',
+                        border: '#164273',
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            400: '#38bdf8', // Glacier Cyan Accent
+                            500: '#00a3da', // Vibrant Electric Cyan/Blue
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            900: '#0c4a6e'
+                        },
+                        cyan: {
+                            400: '#22d3ee',
+                            500: '#06b6d4'
+                        },
+                        ethical: '#c084fc', // Priority Purple
+                        ev: '#fbbf24',      // EV Amber
+                        danger: '#f43f5e',  // Occupied Rose Red
+                        vacant: '#34d399'   // Available Mint Green
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Radiant Navy-Blue Gradient Background for all pages */
+        html, body {
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: radial-gradient(circle at 50% 38%, #0d3d70 0%, #072548 45%, #020c1a 100%) fixed;
+            background-attachment: fixed;
+            color: #f8fafc; 
+        }
+
+        .page { display: none; animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+        .page.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Glassmorphism tuned to sit on the Glowing Navy Canvas */
+        .glass-panel {
+            background: rgba(7, 33, 66, 0.72);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        }
+        .glass-card {
+            background: linear-gradient(145deg, rgba(9, 41, 82, 0.78) 0%, rgba(5, 23, 48, 0.9) 100%);
+            border: 1px solid rgba(56, 189, 248, 0.18);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.5), 0 0 25px rgba(13, 61, 112, 0.25);
+        }
+
+        /* Hero Wallpaper Section: Unblocked & Crystal Clear on the right side */
+        .hero-wallpaper-container {
+            background-image: 
+                linear-gradient(to right, rgba(2, 12, 26, 0.92) 0%, rgba(7, 37, 72, 0.55) 45%, transparent 75%),
+                url('car.jpg'),
+                url('https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center right;
+            background-repeat: no-repeat;
+        }
+
+        /* Hardware Neon Glows */
+        .led-glow { box-shadow: 0 0 10px currentColor; }
+        .slot-target-beacon { animation: targetBeacon 1.2s infinite alternate; }
+        @keyframes targetBeacon {
+            from { box-shadow: 0 0 5px #00a3da; border-color: #00a3da; }
+            to { box-shadow: 0 0 25px #00a3da; border-color: #38bdf8; transform: scale(1.03); }
+        }
+
+        /* Roadway & Aisle Markings */
+        .roadway-aisle {
+            background: repeating-linear-gradient(90deg, #164273 0, #164273 25px, transparent 25px, transparent 50px);
+            background-size: 50px 2px;
+            background-repeat: repeat-x;
+            background-position: center;
+        }
+
+        /* Boom Barrier Servo Mechanism */
+        .barrier-arm {
+            transform-origin: 10px 50%;
+            transition: transform 0.85s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .barrier-raised { transform: rotate(-78deg); }
+
+        /* Splash Screen */
+        #splash-screen {
+            background-color: #090d16;
+            transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes logoStrobeFlash {
+            0% { opacity: 0.85; filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.4)); transform: scale(0.99); }
+            50% { opacity: 1; filter: drop-shadow(0 0 28px rgba(6, 182, 212, 0.95)) drop-shadow(0 0 55px rgba(37, 99, 235, 0.7)); transform: scale(1.01); }
+            100% { opacity: 0.85; filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.4)); transform: scale(0.99); }
+        }
+        .logo-flash-anim { animation: logoStrobeFlash 1.6s ease-in-out infinite; }
+
+        .splash-brand-card {
+            background: rgba(13, 20, 36, 0.92);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.9), 0 0 40px rgba(37, 99, 235, 0.3);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020c1a; }
+        ::-webkit-scrollbar-thumb { background: #164273; border-radius: 999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00a3da; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #bill-print-target, #bill-print-target * { visibility: visible; }
+            #bill-print-target { position: fixed; inset: 0; margin: auto; max-width: 400px; box-shadow: none; border: 1px solid #000; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- SPLASH SCREEN[cite: 7] -->
+    <div id="splash-screen" class="fixed inset-0 z-[9999] flex items-center justify-center select-none overflow-hidden">
+        <svg class="absolute inset-0 w-full h-full object-cover pointer-events-none" viewBox="0 0 900 630" preserveAspectRatio="xMidYMid slice">
+            <defs>
+                <filter id="grain" x="0" y="0" width="100%" height="100%">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="7" result="n"/>
+                    <feColorMatrix in="n" type="saturate" values="0" result="ng"/>
+                    <feComponentTransfer in="ng" result="nc"><feFuncA type="linear" slope="0.12"/></feComponentTransfer>
+                    <feComposite in="nc" in2="SourceGraphic" operator="over"/>
+                </filter>
+            </defs>
+            <rect width="900" height="630" fill="#0d1424"/>
+            <rect width="900" height="630" fill="#0d1424" filter="url(#grain)" opacity="0.85"/>
+            <g stroke="#1e293b" stroke-width="2" opacity="0.6">
+                <line x1="0" y1="72" x2="900" y2="72"/>
+                <line x1="0" y1="562" x2="900" y2="562"/>
+                <line x1="300" y1="0" x2="300" y2="72"/>
+                <line x1="640" y1="0" x2="640" y2="72"/>
+                <line x1="210" y1="562" x2="210" y2="630"/>
+                <line x1="560" y1="562" x2="560" y2="630"/>
+            </g>
+            <line x1="10" y1="316" x2="890" y2="316" stroke="#334155" stroke-width="2" stroke-dasharray="14 10" opacity="0.6"/>
+        </svg>
+
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,#090d16_90%)] pointer-events-none"></div>
+
+        <div id="splash-brand-card" class="splash-brand-card relative z-50 p-6 sm:p-7 rounded-2xl text-center max-w-md w-full mx-4 border border-cyan-500/40">
+            <div class="flex items-center justify-center gap-3.5 logo-flash-anim">
+                <div class="p-2.5 bg-brand-500/25 border border-cyan-400/50 rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.6)]">
+                    <svg class="h-9 w-9 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10.5 7h2.5a2 2 0 010 4h-2.5v3" />
+                    </svg>
+                </div>
+                <div class="text-left">
+                    <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white leading-none">
+                        Ethical<span class="text-cyan-400">Parking</span>
+                    </h1>
+                    <span class="text-[9px] sm:text-[10px] font-mono text-cyan-300 uppercase tracking-widest block mt-1">Autonomous Smart Infrastructure</span>
+                </div>
+            </div>
+
+            <div class="mt-4 py-2 px-4 rounded-xl bg-slate-950/85 border border-slate-800 font-mono text-xs flex items-center justify-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-cyan-400 led-glow animate-ping"></span>
+                <span id="splash-status-text" class="text-slate-300">Executive Fleet Approaching Bays...</span>
+            </div>
+
+            <div class="mt-4 flex items-center justify-between text-[11px] font-mono text-slate-400 border-t border-slate-800/80 pt-3">
+                <span class="text-cyan-400/80 font-bold">16 Smart Bays Synchronizing</span>
+                <button onclick="dismissSplash()" class="text-cyan-400 hover:text-cyan-300 font-bold transition">Skip Intro ➔</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Violation Alert Banner -->
+    <div id="violation-banner" class="hidden bg-danger/90 backdrop-blur-md border-b border-rose-400 px-4 py-3 text-white text-xs font-mono font-bold flex items-center justify-between z-50 sticky top-0 animate-pulse">
+        <div class="flex items-center gap-3 max-w-7xl mx-auto w-full">
+            <span class="text-lg">🚨</span>
+            <span id="violation-text">SECURITY ALARM: Unauthorized vehicle detected in Accessible Priority Bay F1-C03! Compliance penalty ₹500 imposed.</span>
+        </div>
+        <button onclick="dismissViolation()" class="text-white hover:text-rose-200 ml-4 font-mono">✕ DISMISS</button>
+    </div>
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-40 bg-[#020c1a]/85 backdrop-blur-xl border-b border-[#164273]">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <!-- Brand Anchor -->
+                <div class="flex items-center gap-3 cursor-pointer" onclick="navigate('home')" id="header-logo">
+                    <div class="p-2 bg-brand-500/15 border border-brand-500/30 rounded-xl">
+                        <svg class="h-7 w-7 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10.5 7h2.5a2 2 0 010 4h-2.5v3" />
+                        </svg>
+                    </div>
+                    <div>
+                        <span class="font-extrabold text-xl tracking-tight text-white">Ethical<span class="text-cyan-400">Parking</span></span>
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 led-glow text-cyan-400 animate-pulse"></span>
+                            <span class="text-[10px] uppercase font-mono tracking-wider text-cyan-200/80">500 Nodes Online</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <nav class="hidden lg:flex items-center gap-1 bg-[#051f42]/90 p-1.5 rounded-xl border border-[#164273]">
+                    <button onclick="navigate('home')" class="nav-link text-white bg-[#092952] px-3.5 py-2 rounded-lg font-semibold text-xs font-mono transition shadow">Home</button>
+                    <button onclick="navigate('dashboard')" class="nav-link text-slate-300 hover:text-white px-3.5 py-2 rounded-lg font-semibold text-xs font-mono transition">Live Matrix</button>
+                    <button onclick="navigate('fastag')" class="nav-link text-slate-300 hover:text-white px-3.5 py-2 rounded-lg font-semibold text-xs font-mono transition">FASTag Gates</button>
+                    <button onclick="navigate('find')" class="nav-link text-slate-300 hover:text-white px-3.5 py-2 rounded-lg font-semibold text-xs font-mono transition">Find My Car</button>
+                    <button onclick="navigate('book')" class="nav-link text-slate-300 hover:text-white px-3.5 py-2 rounded-lg font-semibold text-xs font-mono transition">Reservation Desk</button>
+                    <button onclick="navigate('architecture')" class="nav-link text-slate-300 hover:text-white px-3.5 py-2 rounded-lg font-semibold text-xs font-mono transition">Architecture</button>
+                </nav>
+
+                <!-- Audio FX & Quick Status Badge -->
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleAudio()" id="audio-toggle-btn" class="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-mono font-bold bg-[#051f42] text-slate-200 border border-[#164273] hover:border-cyan-400 transition">
+                        <span id="audio-status-icon">🔊</span>
+                        <span class="hidden sm:inline">Audio</span>
+                    </button>
+                    <button onclick="navigate('dashboard')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-brand-500 hover:bg-brand-600 text-white transition shadow-[0_0_20px_rgba(0,163,218,0.4)]">
+                        <span>Free Bays</span>
+                        <span id="header-available-badge" class="px-1.5 py-0.5 rounded-md bg-[#020c1a]/70 font-mono text-[11px] text-cyan-300 font-bold">...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow">
+
+        <!-- PAGE 1: HOME -->
+        <section id="page-home" class="page active">
+            <div class="hero-wallpaper-container relative pt-8 pb-32 border-b border-[#164273]">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    
+                    <!-- Floating Quick Booking Strip (Dark Glassmorphic Theme) -->
+                    <div class="max-w-5xl mx-auto mb-16 bg-[#072142]/85 backdrop-blur-xl rounded-2xl shadow-2xl p-3 border border-[#164273] flex flex-col md:flex-row items-center gap-3 text-white font-mono text-xs">
+                        <div class="flex-1 w-full flex items-center gap-2.5 px-3.5 py-2.5 bg-[#03152e] rounded-xl border border-[#164273]">
+                            <span class="text-cyan-400 font-sans font-bold">🏢</span>
+                            <select id="quick-floor" class="w-full bg-transparent font-sans font-semibold text-white focus:outline-none text-xs sm:text-sm cursor-pointer">
+                                <option value="1" class="bg-[#03152e] text-white">Floor 01 (Ground Deck)</option>
+                                <option value="2" class="bg-[#03152e] text-white">Floor 02 (Standard Deck)</option>
+                                <option value="3" class="bg-[#03152e] text-white">Floor 03 (EV Deck)</option>
+                                <option value="4" class="bg-[#03152e] text-white">Floor 04 (Executive)</option>
+                                <option value="5" class="bg-[#03152e] text-white">Floor 05 (Rooftop Deck)</option>
+                            </select>
+                        </div>
+
+                        <div class="flex-1 w-full flex items-center gap-2.5 px-3.5 py-2.5 bg-[#03152e] rounded-xl border border-[#164273]">
+                            <span class="text-cyan-400 font-sans font-bold">🚗</span>
+                            <input type="text" id="quick-plate" placeholder="VEHICLE PLATE (MH 12 AB 1234)" class="w-full bg-transparent font-mono uppercase text-white placeholder-slate-400 focus:outline-none text-xs sm:text-sm">
+                        </div>
+
+                        <div class="flex-1 w-full flex items-center gap-2.5 px-3.5 py-2.5 bg-[#03152e] rounded-xl border border-[#164273]">
+                            <span class="text-cyan-400 font-sans font-bold">⏱️</span>
+                            <select id="quick-category" class="w-full bg-transparent font-sans font-semibold text-white focus:outline-none text-xs sm:text-sm cursor-pointer">
+                                <option value="4wheeler" class="bg-[#03152e] text-white">Car (₹50/hr)</option>
+                                <option value="2wheeler" class="bg-[#03152e] text-white">Two-Wheeler (₹20/hr)</option>
+                                <option value="ev" class="bg-[#03152e] text-white">EV Fast-Charge (₹60/hr)</option>
+                            </select>
+                        </div>
+
+                        <button onclick="handleQuickReserve()" class="w-full md:w-auto px-8 py-3.5 rounded-xl font-bold bg-brand-500 hover:bg-brand-600 text-white font-sans text-sm tracking-wide transition shadow-[0_0_20px_rgba(0,163,218,0.45)] flex items-center justify-center gap-2 flex-shrink-0">
+                            <span>Book Now</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Hero Main Content -->
+                    <div class="max-w-2xl py-6 sm:py-10">
+                        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-500/20 border border-brand-500/40 text-cyan-300 text-xs font-semibold uppercase tracking-wider mb-6">
+                            <span class="w-2 h-2 rounded-full bg-cyan-400 led-glow animate-ping"></span>
+                            Autonomous IoT Infrastructure • Version 2.4
+                        </div>
+                        
+                        <h1 class="text-4xl sm:text-6xl font-black tracking-tight text-white leading-tight">
+                            You Can't Park Closer.<br>
+                            <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-200">Or Smarter.</span>
+                        </h1>
+                        
+                        <p class="mt-6 text-base sm:text-lg text-slate-200 leading-relaxed font-normal max-w-xl">
+                            Real-time ultrasonic tracking across 500 bays. Zero search delays, automated FASTag boom barriers, and guaranteed ethical accessible priority.
+                        </p>
+
+                        <div class="mt-8 flex flex-wrap items-center gap-4">
+                            <button onclick="navigate('dashboard')" class="px-8 py-4 rounded-xl font-bold bg-brand-500 hover:bg-brand-600 text-white transition flex items-center gap-2 shadow-[0_0_30px_rgba(0,163,218,0.45)]">
+                                <span>Inspect Live Matrix</span>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                            </button>
+                            <button onclick="navigate('fastag')" class="px-8 py-4 rounded-xl font-bold bg-[#072142] hover:bg-[#092952] border border-[#164273] text-white transition flex items-center gap-2">
+                                <span>FASTag Gate Terminal</span>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Overlapping Feature Cards Row[cite: 2] -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-20 mb-20">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div class="glass-card p-6 rounded-2xl border border-[#164273] shadow-xl hover:border-cyan-400/40 transition">
+                        <div class="w-12 h-12 rounded-xl bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center text-cyan-400 text-2xl mb-4">
+                            🛡️
+                        </div>
+                        <h3 class="text-base font-bold text-white mb-2">Safe &amp; Monitored</h3>
+                        <p class="text-slate-300 text-xs leading-relaxed">Continuous 24/7 ultrasonic sensor telemetry ensures your vehicle's occupancy and safety are verified constantly.</p>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-2xl border-2 border-purple-500/50 bg-gradient-to-b from-purple-950/40 to-[#072142] shadow-2xl relative overflow-hidden">
+                        <div class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono text-[9px] font-bold">ETHICAL</div>
+                        <div class="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300 text-2xl mb-4">
+                            ♿
+                        </div>
+                        <h3 class="text-base font-bold text-white mb-2">Accessible Priority</h3>
+                        <p class="text-slate-200 text-xs leading-relaxed">Dedicated front-row bays reserved for differently-abled patrons, protected by automated security violation alarms.</p>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-2xl border border-[#164273] shadow-xl hover:border-cyan-400/40 transition">
+                        <div class="w-12 h-12 rounded-xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center text-blue-400 text-2xl mb-4">
+                            🗺️
+                        </div>
+                        <h3 class="text-base font-bold text-white mb-2">Just Steps Away</h3>
+                        <p class="text-slate-300 text-xs leading-relaxed">Turn-by-turn indoor wayfinding guides you directly from the main elevator core to your parked bay with zero confusion.</p>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-2xl border border-[#164273] shadow-xl hover:border-cyan-400/40 transition">
+                        <div class="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-400 text-2xl mb-4">
+                            ⚡
+                        </div>
+                        <h3 class="text-base font-bold text-white mb-2">EV Fast-Charging</h3>
+                        <p class="text-slate-300 text-xs leading-relaxed">Equipped with high-capacity 7.4 kW AC chargers. Park and recharge with transparent combined digital billing.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Environmental Counters & Statistics -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-card p-6 rounded-2xl">
+                        <span class="text-xs uppercase font-mono text-cyan-200/70">Total Infrastructure</span>
+                        <div class="text-3xl font-extrabold text-white mt-1">5 Floors</div>
+                        <div class="text-xs text-cyan-300 font-mono mt-2">500 Smart Ultrasonic Bays</div>
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl">
+                        <span class="text-xs uppercase font-mono text-cyan-200/70">Estimated Fuel Saved</span>
+                        <div class="text-3xl font-extrabold text-cyan-400 mt-1" id="fuel-counter">1,482 L</div>
+                        <div class="text-xs text-slate-300 font-mono mt-2">Zero Search Congestion</div>
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl">
+                        <span class="text-xs uppercase font-mono text-cyan-200/70">CO2 Emissions Avoided</span>
+                        <div class="text-3xl font-extrabold text-emerald-400 mt-1" id="co2-counter">3,408 kg</div>
+                        <div class="text-xs text-cyan-300/90 font-mono mt-2">Smart City Green Metric</div>
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl">
+                        <span class="text-xs uppercase font-mono text-cyan-200/70">Gate Clearance Speed</span>
+                        <div class="text-3xl font-extrabold text-white mt-1">1.8 sec</div>
+                        <div class="text-xs text-cyan-300 font-mono mt-2">Zero Cash Bottlenecks</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 2: LIVE MATRIX -->
+        <section id="page-dashboard" class="page">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div class="glass-card p-6 rounded-2xl mb-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6 border border-[#164273]">
+                    <div>
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-2xl font-black text-white tracking-tight">Deck Telemetry &amp; Layout</h2>
+                            <span class="px-2.5 py-0.5 rounded-full bg-brand-500/20 text-cyan-300 border border-brand-500/30 text-xs font-mono font-bold">50 BAYS PER FLOOR</span>
+                        </div>
+                        <p class="text-slate-300 text-sm mt-1">Select floor and vehicle category. Click green bays to reserve, red to inspect telemetry.</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-3">
+                        <button onclick="toggleSimulation()" id="sim-btn" class="px-4 py-2.5 rounded-xl font-mono text-xs font-bold border border-[#164273] bg-[#051f42] hover:bg-[#072548] text-slate-200 flex items-center gap-2 transition">
+                            <span class="w-2 h-2 rounded-full bg-slate-400" id="sim-status-dot"></span>
+                            <span id="sim-btn-text">Start IoT Sim</span>
+                        </button>
+                        <button onclick="triggerSimulatedViolation()" class="px-3.5 py-2.5 rounded-xl font-mono text-xs font-bold border border-rose-500/40 bg-rose-950/40 text-rose-300 hover:bg-rose-900/60 transition" title="Test Anti-Abuse Alarm">
+                            Simulate Violation
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-6">
+                    <div class="md:col-span-8 glass-panel p-2 rounded-2xl flex items-center justify-between gap-1 overflow-x-auto border border-[#164273]">
+                        <button onclick="setFloorFilter(1)" class="floor-btn flex-1 min-w-[75px] py-2.5 px-3 rounded-xl font-bold text-xs font-mono transition bg-brand-500 text-white shadow-md">Floor 1</button>
+                        <button onclick="setFloorFilter(2)" class="floor-btn flex-1 min-w-[75px] py-2.5 px-3 rounded-xl font-bold text-xs font-mono transition text-slate-300 hover:text-white hover:bg-[#092952]">Floor 2</button>
+                        <button onclick="setFloorFilter(3)" class="floor-btn flex-1 min-w-[75px] py-2.5 px-3 rounded-xl font-bold text-xs font-mono transition text-slate-300 hover:text-white hover:bg-[#092952]">Floor 3</button>
+                        <button onclick="setFloorFilter(4)" class="floor-btn flex-1 min-w-[75px] py-2.5 px-3 rounded-xl font-bold text-xs font-mono transition text-slate-300 hover:text-white hover:bg-[#092952]">Floor 4</button>
+                        <button onclick="setFloorFilter(5)" class="floor-btn flex-1 min-w-[75px] py-2.5 px-3 rounded-xl font-bold text-xs font-mono transition text-slate-300 hover:text-white hover:bg-[#092952]">Floor 5</button>
+                    </div>
+
+                    <div class="md:col-span-4 glass-panel p-2 rounded-2xl flex items-center gap-2 border border-[#164273]">
+                        <button id="tab-car" onclick="setVehicleFilter('car')" class="flex-1 py-2.5 rounded-xl font-bold text-xs font-mono transition bg-brand-500/20 text-cyan-300 border border-brand-500/30">Four-Wheelers</button>
+                        <button id="tab-bike" onclick="setVehicleFilter('bike')" class="flex-1 py-2.5 rounded-xl font-bold text-xs font-mono transition text-slate-300 hover:text-white">Two-Wheelers</button>
+                    </div>
+                </div>
+
+                <div class="glass-card p-6 rounded-3xl border border-[#164273] relative">
+                    <div class="flex flex-wrap items-center justify-between mb-6 pb-4 border-b border-[#164273] gap-3">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-mono uppercase text-slate-400 tracking-wider">Level Layout:</span>
+                            <span id="current-deck-display" class="text-sm font-mono font-bold text-white">Floor 01 • Standard &amp; Priority Deck</span>
+                        </div>
+                        <div class="flex items-center gap-4 text-xs font-mono">
+                            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400 led-glow text-emerald-400"></span> Vacant: <span id="current-deck-vacant" class="text-emerald-400 font-bold">0</span></div>
+                            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-purple-400 led-glow text-purple-400"></span> Priority: <span class="text-purple-300 font-bold">5 Bays</span></div>
+                            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 led-glow text-amber-400"></span> EV Chargers: <span class="text-amber-300 font-bold">10 Bays</span></div>
+                        </div>
+                    </div>
+                    <div id="deck-aisle-container" class="space-y-6"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 3: FASTAG BARRIER SIMULATOR -->
+        <section id="page-fastag" class="page">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+                <div class="glass-card p-8 rounded-3xl border border-[#164273] mb-8">
+                    <div class="max-w-2xl">
+                        <span class="text-xs font-mono uppercase text-cyan-300 tracking-widest bg-brand-500/20 px-3 py-1 rounded-full border border-brand-500/30">NPCI FASTag Protocol Mock</span>
+                        <h2 class="text-3xl font-black text-white mt-3">FASTag Automated Boom Barrier</h2>
+                        <p class="text-slate-300 text-sm mt-2">Autonomous passive RFID scanning at entry and exit gates. Automated wallet deductions and gate lifting in &lt; 2 seconds.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="glass-card p-6 rounded-3xl border border-[#164273] flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center pb-4 border-b border-[#164273]">
+                                <h3 class="font-bold text-white text-lg flex items-center gap-2">
+                                    <span>ENTRY GATE 01</span>
+                                    <span class="text-[10px] font-mono bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded">RFID ACTIVE</span>
+                                </h3>
+                                <span id="entry-status-badge" class="font-mono text-xs text-slate-400">BARRIER: CLOSED</span>
+                            </div>
+
+                            <div class="py-10 text-center relative flex justify-center items-center">
+                                <div class="w-12 h-28 bg-[#051f42] rounded-lg border border-[#164273] relative z-10 flex flex-col items-center justify-center gap-2">
+                                    <span class="w-3.5 h-3.5 rounded-full bg-rose-500 led-glow text-rose-500" id="entry-barrier-light"></span>
+                                    <span class="text-[8px] font-mono text-slate-400">SERVO</span>
+                                </div>
+                                <div id="entry-boom-arm" class="barrier-arm h-3 w-48 bg-gradient-to-r from-amber-400 via-rose-500 to-amber-400 border border-slate-900 rounded-r-full shadow-lg"></div>
+                            </div>
+
+                            <div class="space-y-3">
+                                <label class="block text-xs font-mono uppercase text-slate-300">Select Test Vehicle RFID Tag</label>
+                                <div class="flex gap-2">
+                                    <button onclick="scanFastagEntry('MH12AB1234')" class="flex-1 py-2 px-3 rounded-xl bg-[#051f42] border border-[#164273] text-xs font-mono text-cyan-300 hover:bg-[#092952] transition">MH 12 AB 1234 (₹850)</button>
+                                    <button onclick="scanFastagEntry('MH14DE5678')" class="flex-1 py-2 px-3 rounded-xl bg-[#051f42] border border-[#164273] text-xs font-mono text-cyan-300 hover:bg-[#092952] transition">MH 14 DE 5678 (₹420)</button>
+                                </div>
+                                <div class="flex gap-2 mt-2">
+                                    <input type="text" id="manual-fastag-input" placeholder="Custom Plate: MH 02 XY 9999" class="flex-grow px-4 py-2.5 bg-[#03152e] border border-[#164273] rounded-xl text-xs font-mono uppercase text-white focus:outline-none focus:border-cyan-400">
+                                    <button onclick="scanFastagEntry(document.getElementById('manual-fastag-input').value)" class="px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs font-mono">Scan Tag</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="entry-terminal-log" class="mt-6 p-4 rounded-xl bg-[#020e20] border border-[#164273] font-mono text-xs text-slate-400 min-h-[90px] flex items-center justify-center text-center">
+                            Waiting for vehicle RFID tag approach at Entry Gate...
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-3xl border border-[#164273] flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center pb-4 border-b border-[#164273]">
+                                <h3 class="font-bold text-white text-lg flex items-center gap-2">
+                                    <span>EXIT GATE 01</span>
+                                    <span class="text-[10px] font-mono bg-blue-500/20 text-brand-400 px-2 py-0.5 rounded">AUTO-TOLL</span>
+                                </h3>
+                                <span id="exit-status-badge" class="font-mono text-xs text-slate-400">BARRIER: CLOSED</span>
+                            </div>
+
+                            <div class="py-10 text-center relative flex justify-center items-center">
+                                <div class="w-12 h-28 bg-[#051f42] rounded-lg border border-[#164273] relative z-10 flex flex-col items-center justify-center gap-2">
+                                    <span class="w-3.5 h-3.5 rounded-full bg-rose-500 led-glow text-rose-500" id="exit-barrier-light"></span>
+                                    <span class="text-[8px] font-mono text-slate-400">SERVO</span>
+                                </div>
+                                <div id="exit-boom-arm" class="barrier-arm h-3 w-48 bg-gradient-to-r from-amber-400 via-rose-500 to-amber-400 border border-slate-900 rounded-r-full shadow-lg"></div>
+                            </div>
+
+                            <div class="space-y-3">
+                                <label class="block text-xs font-mono uppercase text-slate-300">Select Parked Vehicle for Departure</label>
+                                <select id="exit-vehicle-select" class="w-full px-4 py-2.5 bg-[#03152e] border border-[#164273] rounded-xl text-xs font-mono text-white focus:outline-none focus:border-cyan-400">
+                                    <option value="">-- Choose Parked Vehicle --</option>
+                                </select>
+                                <button onclick="scanFastagExit()" class="w-full py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-mono text-xs uppercase font-bold tracking-wider transition shadow-[0_0_20px_rgba(0,163,218,0.3)]">Deduct FASTag &amp; Lift Barrier</button>
+                            </div>
+                        </div>
+
+                        <div id="exit-terminal-log" class="mt-6 p-4 rounded-xl bg-[#020e20] border border-[#164273] font-mono text-xs text-slate-400 min-h-[90px] flex items-center justify-center text-center">
+                            Select an occupied vehicle to calculate stay duration and execute FASTag toll settlement.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 4: "FIND MY CAR" INDOOR WAYFINDER -->
+        <section id="page-find" class="page">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="glass-card p-8 sm:p-10 rounded-3xl border border-[#164273]">
+                    <div class="max-w-xl mb-8">
+                        <span class="text-xs font-mono uppercase text-cyan-300 tracking-widest bg-brand-500/20 px-3 py-1 rounded-full border border-brand-500/30">Turn-by-Turn Wayfinding</span>
+                        <h2 class="text-3xl font-black text-white mt-3">Indoor Vehicle Locator</h2>
+                        <p class="text-slate-300 text-sm mt-2">Enter your license plate number. The locator pinpoints your slot, highlights the path, and provides walking directions from the nearest elevator.</p>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input type="text" id="find-car-input" placeholder="e.g. MH 12 AB 1234" class="flex-grow px-5 py-3.5 bg-[#03152e] border border-[#164273] rounded-2xl text-white font-mono uppercase text-sm focus:outline-none focus:border-cyan-400">
+                        <button onclick="locateCar()" class="px-8 py-3.5 rounded-2xl font-bold bg-brand-500 hover:bg-brand-600 text-white font-mono text-xs uppercase tracking-wider transition shadow-[0_0_20px_rgba(0,163,218,0.35)]">Locate Vehicle</button>
+                    </div>
+
+                    <div id="find-car-result" class="hidden mt-8 p-6 rounded-2xl bg-[#020e20] border border-[#164273] space-y-4 font-mono text-xs">
+                        <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#164273]">
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">VEHICLE FOUND</span>
+                                <span class="text-xl font-bold text-white uppercase" id="find-veh-plate">MH 12 AB 1234</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-slate-400 block text-[10px]">CURRENT DECK LOCATION</span>
+                                <span class="text-xl font-bold text-cyan-300" id="find-veh-slot">Floor 2 • Bay F2-C14</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="p-3 bg-[#051f42] rounded-xl border border-[#164273]">
+                                <span class="text-slate-400 block text-[10px]">SLOT TYPE</span>
+                                <span class="font-bold text-white uppercase" id="find-veh-cat">Standard Bay</span>
+                            </div>
+                            <div class="p-3 bg-[#051f42] rounded-xl border border-[#164273]">
+                                <span class="text-slate-400 block text-[10px]">DURATION</span>
+                                <span class="font-bold text-white" id="find-veh-time">1 Hr 25 Mins</span>
+                            </div>
+                            <div class="p-3 bg-[#051f42] rounded-xl border border-[#164273]">
+                                <span class="text-slate-400 block text-[10px]">ACCRUED DUE (INR)</span>
+                                <span class="font-bold text-cyan-300" id="find-veh-due">₹ 50</span>
+                            </div>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-blue-950/30 border border-blue-500/30 text-slate-200">
+                            <span class="text-cyan-300 font-bold block mb-1">🗺️ Walking Directions from Elevator Core B:</span>
+                            <p id="find-veh-directions">Take Elevator B to the target floor. Exit right into Driveway Aisle 01. Follow the road markings 25 meters down the aisle. Your vehicle is on the left.</p>
+                            <div class="mt-3">
+                                <button onclick="jumpToFoundSlot()" class="text-xs font-bold text-cyan-300 hover:underline">→ Jump to Bay on Live Deck Matrix</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 5: RESERVATION DESK & LEDGER -->
+        <section id="page-book" class="page">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    
+                    <div class="lg:col-span-5">
+                        <div class="glass-card p-8 rounded-3xl border border-[#164273]">
+                            <div class="flex items-center justify-between mb-6 pb-4 border-b border-[#164273]">
+                                <div>
+                                    <h2 class="text-2xl font-black text-white">Manual Booking Desk</h2>
+                                    <p class="text-xs text-slate-300 font-mono mt-1">Pre-reserve bay with Dynamic UPI QR</p>
+                                </div>
+                                <span class="px-3 py-1 rounded-xl bg-brand-500/20 text-cyan-300 font-mono text-xs font-bold border border-brand-500/30">₹ Instant Pay</span>
+                            </div>
+
+                            <form onsubmit="handleDirectBooking(event)" class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-mono uppercase text-slate-300 mb-1.5">Target Slot ID</label>
+                                    <input type="text" id="direct-slot-id" required placeholder="e.g. F1-C04" oninput="checkIfEthicalSlot(this.value)" class="w-full px-4 py-2.5 bg-[#03152e] border border-[#164273] rounded-xl text-white font-mono text-base uppercase tracking-wider focus:outline-none focus:border-cyan-400">
+                                </div>
+
+                                <div id="ethical-permit-group" class="hidden p-3 rounded-xl bg-purple-950/30 border border-purple-500/40 space-y-1.5">
+                                    <label class="block text-xs font-mono uppercase text-purple-300 font-bold">Accessible Parking Permit ID</label>
+                                    <input type="text" id="direct-permit-id" placeholder="e.g. DIS-MH-88992" class="w-full px-3 py-2 bg-[#03152e] border border-purple-500/40 rounded-lg text-white font-mono text-xs uppercase focus:outline-none focus:border-purple-400">
+                                    <span class="text-[10px] text-purple-300/80 font-mono block">Required to verify and reserve accessible priority spots.</span>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-mono uppercase text-slate-300 mb-1.5">Vehicle License Plate</label>
+                                    <input type="text" id="direct-vehicle-no" required placeholder="MH 12 AB 1234" class="w-full px-4 py-2.5 bg-[#03152e] border border-[#164273] rounded-xl text-white font-mono text-sm uppercase tracking-wider focus:outline-none focus:border-cyan-400">
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-mono uppercase text-slate-300 mb-1.5">Category</label>
+                                        <select id="direct-vehicle-type" onchange="updateDirectPrice()" class="w-full px-3 py-2.5 bg-[#03152e] border border-[#164273] rounded-xl text-white font-mono text-xs focus:outline-none focus:border-cyan-400">
+                                            <option value="4wheeler">Car (₹50/hr)</option>
+                                            <option value="2wheeler">Bike (₹20/hr)</option>
+                                            <option value="ev">EV Car (₹60/hr)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-mono uppercase text-slate-300 mb-1.5">Duration</label>
+                                        <select id="direct-duration" onchange="updateDirectPrice()" class="w-full px-3 py-2.5 bg-[#03152e] border border-[#164273] rounded-xl text-white font-mono text-xs focus:outline-none focus:border-cyan-400">
+                                            <option value="1">1 Hour</option>
+                                            <option value="2">2 Hours</option>
+                                            <option value="4">4 Hours</option>
+                                            <option value="8">8 Hours</option>
+                                            <option value="12">12 Hours</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="p-4 rounded-2xl bg-[#020e20] border border-[#164273] text-center font-mono">
+                                    <span class="text-[11px] text-slate-300 block mb-2">SCAN VIA ANY UPI APP (BHIM / GPAY / PHONEPE)</span>
+                                    <img id="upi-qr-preview" src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=upi%3A%2F%2Fpay%3Fpa%3Dethicalparking%40upi%26pn%3DEthicalParking%26am%3D50%26cu%3DINR" alt="UPI QR" class="mx-auto rounded-lg border border-[#164273] w-32 h-32">
+                                    <div class="mt-2 text-xl font-bold text-cyan-300" id="direct-live-price">₹ 50</div>
+                                </div>
+
+                                <button type="submit" class="w-full py-3.5 rounded-xl font-bold bg-brand-500 hover:bg-brand-600 text-white font-mono text-xs uppercase tracking-wider transition shadow-[0_0_25px_rgba(0,163,218,0.35)]">Confirm &amp; Dispense Pass</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-7">
+                        <div class="glass-card p-8 rounded-3xl border border-[#164273] h-full flex flex-col">
+                            <div class="flex items-center justify-between mb-6 pb-4 border-b border-[#164273]">
+                                <div>
+                                    <h2 class="text-2xl font-black text-white">Digital Pass Ledger</h2>
+                                    <p class="text-xs text-slate-300 font-mono mt-1">Audit log of issued parking passes</p>
+                                </div>
+                                <button onclick="clearHistory()" class="text-xs font-mono text-slate-400 hover:text-rose-400 transition">Clear Ledger</button>
+                            </div>
+
+                            <div id="history-container" class="space-y-3 flex-grow overflow-y-auto max-h-[520px] pr-2">
+                                <div id="empty-history" class="text-center py-20 text-slate-400 font-mono">
+                                    <svg class="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    <p class="text-sm">No reservations recorded in this session.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 6: ARCHITECTURE -->
+        <section id="page-architecture" class="page">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                <div class="text-center max-w-2xl mx-auto mb-16">
+                    <span class="text-xs font-mono uppercase text-cyan-300 tracking-widest bg-brand-500/20 px-3 py-1 rounded-full border border-brand-500/30">IoTWF 7-Layer Aligned</span>
+                    <h2 class="text-3xl sm:text-4xl font-black text-white mt-4 tracking-tight">System Edge Architecture</h2>
+                    <p class="text-slate-300 text-sm mt-3">From edge ultrasonic ping transducers to the cloud visualization dashboard.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="glass-card p-6 rounded-2xl border border-[#164273]">
+                        <div class="text-cyan-400 font-mono text-xs font-bold mb-2">LAYER 01 / PHYSICAL</div>
+                        <h3 class="text-lg font-bold text-white mb-2">HC-SR04 Transducers</h3>
+                        <p class="text-slate-300 text-xs leading-relaxed">High-frequency 40kHz ultrasound bursts measure physical bay clearance. An ESP8266 microchip samples analog reflections and thresholds vehicle occupancy at 50 cm.</p>
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl border border-[#164273]">
+                        <div class="text-cyan-400 font-mono text-xs font-bold mb-2">LAYER 02 / TRANSPORT</div>
+                        <h3 class="text-lg font-bold text-white mb-2">MQTT &amp; Wi-Fi Backhaul</h3>
+                        <p class="text-slate-300 text-xs leading-relaxed">State transitions publish compact JSON payloads over MQTT via 802.11 b/g/n gateways directly to the cloud broker with sub-second transmission guarantees.</p>
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl border border-[#164273]">
+                        <div class="text-cyan-400 font-mono text-xs font-bold mb-2">LAYER 03 / APPLICATION</div>
+                        <h3 class="text-lg font-bold text-white mb-2">Web Command Center</h3>
+                        <p class="text-slate-300 text-xs leading-relaxed">The frontend client subscribes to dynamic availability streams, shifting CSS state matrices in real-time, executing reservations, and dispensing digital receipts.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-[#164273] bg-[#020c1a] py-8 text-center text-slate-400 text-xs font-mono">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>© 2026 Ethical Parking Slot • Department of IoT Smart City Initiative</p>
+            <div class="flex items-center gap-4 text-cyan-300/80">
+                <span>NodeMCU ESP8266 Active</span>
+                <span>•</span>
+                <span>FASTag NPCI Protocol</span>
+                <span>•</span>
+                <span>UPI v2.0 Gateway</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODAL 1: DASHBOARD ALLOCATION -->
+    <div id="booking-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-card border border-[#164273] w-full max-w-md rounded-3xl overflow-hidden shadow-2xl animate-[fadeIn_0.25s_ease-out]">
+            <div class="bg-[#051f42] px-6 py-5 border-b border-[#164273] flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <span>Allocate Bay:</span>
+                        <span id="dash-slot-id" class="text-cyan-400 font-mono font-bold">F1-C01</span>
+                    </h3>
+                    <span id="dash-category-badge" class="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-brand-500/20 text-cyan-300">Standard</span>
+                </div>
+                <button onclick="closeDashBookingModal()" class="text-slate-400 hover:text-white text-xl">✕</button>
+            </div>
+            
+            <form onsubmit="handleDashBooking(event)" class="p-6 space-y-4">
+                <input type="hidden" id="dash-hidden-slot">
+
+                <div id="dash-permit-group" class="hidden p-3 rounded-xl bg-purple-950/30 border border-purple-500/40 space-y-1">
+                    <label class="block text-xs font-mono uppercase text-purple-300 font-bold">Priority Permit ID</label>
+                    <input type="text" id="dash-permit-id" placeholder="DIS-MH-12345" class="w-full px-3 py-1.5 bg-[#03152e] border border-purple-500/40 rounded-lg text-white font-mono text-xs uppercase focus:outline-none focus:border-purple-400">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-mono uppercase text-slate-300 mb-1.5">Vehicle License Plate</label>
+                    <input type="text" id="dash-veh-no" required placeholder="MH 14 CC 8899" class="w-full px-4 py-2.5 bg-[#03152e] border border-[#164273] rounded-xl text-white font-mono text-sm uppercase focus:outline-none focus:border-cyan-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-mono uppercase text-slate-300 mb-1.5">Reservation Hours</label>
+                    <select id="dash-duration" onchange="updateDashPrice()" class="w-full px-4 py-2.5 bg-[#03152e] border border-[#164273] rounded-xl text-white font-mono text-sm focus:outline-none focus:border-cyan-400">
+                        <option value="1">1 Hour</option>
+                        <option value="2">2 Hours</option>
+                        <option value="4">4 Hours</option>
+                        <option value="8">8 Hours</option>
+                    </select>
+                </div>
+
+                <div class="p-4 rounded-xl bg-[#020e20] border border-[#164273] flex justify-between items-center font-mono">
+                    <span class="text-xs text-slate-400">Total Payable:</span>
+                    <span id="dash-live-price" class="text-xl font-black text-cyan-300">₹ 50</span>
+                </div>
+
+                <button type="submit" class="w-full py-3.5 rounded-xl font-bold bg-brand-500 hover:bg-brand-600 text-white font-mono text-xs uppercase tracking-wider transition shadow-[0_0_20px_rgba(0,163,218,0.35)]">Confirm Allocation</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: OCCUPIED TELEMETRY INSPECTOR -->
+    <div id="occupied-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-card border border-rose-500/30 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl animate-[fadeIn_0.25s_ease-out]">
+            <div class="bg-rose-950/30 px-6 py-5 border-b border-rose-900/40 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <span class="w-3 h-3 rounded-full bg-danger led-glow text-danger animate-ping"></span>
+                    <div>
+                        <h3 class="text-lg font-bold text-white">Occupied Bay Telemetry</h3>
+                        <span id="occ-slot-id" class="text-xs text-rose-300 font-mono">Bay F1-C01</span>
+                    </div>
+                </div>
+                <button onclick="closeOccupiedModal()" class="text-slate-400 hover:text-white text-xl">✕</button>
+            </div>
+            <div class="p-6 space-y-4 font-mono text-xs">
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="p-3 bg-[#051f42] rounded-xl border border-[#164273]">
+                        <span class="text-slate-400 block text-[10px]">PING DIST</span>
+                        <span class="font-bold text-white text-sm" id="occ-sensor-val">28.4 cm</span>
+                    </div>
+                    <div class="p-3 bg-[#051f42] rounded-xl border border-[#164273]">
+                        <span class="text-slate-400 block text-[10px]">VOLTAGE</span>
+                        <span class="font-bold text-cyan-400 text-sm" id="occ-battery-val">4.12 V</span>
+                    </div>
+                    <div class="p-3 bg-[#051f42] rounded-xl border border-[#164273]">
+                        <span class="text-slate-400 block text-[10px]">RSSI</span>
+                        <span class="font-bold text-blue-400 text-sm" id="occ-rssi-val">-58 dBm</span>
+                    </div>
+                </div>
+
+                <div id="occ-ev-gauge" class="hidden p-4 rounded-xl bg-amber-950/20 border border-amber-500/30 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-amber-400 font-bold">EV AC Fast Charger</span>
+                        <span class="text-amber-300 font-mono">7.4 kW Active</span>
+                    </div>
+                    <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                        <div class="bg-amber-400 h-2 rounded-full w-3/4"></div>
+                    </div>
+                    <div class="flex justify-between text-[10px] text-slate-400">
+                        <span>State of Charge: 76%</span>
+                        <span>Dispensed: 11.2 kWh</span>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-xl bg-[#020e20] border border-[#164273] space-y-2">
+                    <div class="flex justify-between"><span class="text-slate-400">Vehicle Number:</span><span class="text-white font-bold" id="occ-veh-val">MH 12 AB 1234</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Category:</span><span class="text-cyan-300" id="occ-cat-val">Standard Car</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Duration:</span><span class="text-white" id="occ-dur-val">2 Hours</span></div>
+                </div>
+                <div class="pt-2">
+                    <button onclick="vacateOccupiedSlot()" class="w-full py-3.5 rounded-xl font-bold bg-danger hover:bg-rose-600 text-white font-mono text-xs uppercase tracking-wider transition flex items-center justify-center gap-2">
+                        <span>Checkout / Release Slot</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: DIGITAL PRINTABLE RECEIPT -->
+    <div id="bill-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div id="bill-print-target" class="bg-white text-slate-900 w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl font-mono text-xs animate-[fadeIn_0.3s_ease-out]">
+            <div class="p-6 text-center border-b border-dashed border-slate-300">
+                <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <h3 class="text-xl font-black text-slate-900 tracking-tight">ETHICAL PARKING</h3>
+                <p class="text-[10px] uppercase text-slate-500 mt-0.5">Automated Smart Receipt</p>
+                <div class="mt-3 text-[10px] text-slate-400" id="bill-id">TXN-00000000</div>
+            </div>
+
+            <div class="p-6 space-y-3">
+                <div class="flex justify-between"><span class="text-slate-500">TIMESTAMP:</span><span id="bill-date" class="font-bold text-slate-800"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">ASSIGNED BAY:</span><span id="bill-slot" class="font-black text-blue-600 text-sm"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">VEHICLE PLATE:</span><span id="bill-vehicle" class="font-bold text-slate-800 uppercase"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">DURATION:</span><span id="bill-duration" class="font-medium text-slate-800"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">GST (18% INCL):</span><span class="text-slate-800">PAID</span></div>
+                
+                <div class="border-t-2 border-dashed border-slate-300 pt-3 mt-3 flex justify-between items-center text-sm">
+                    <span class="font-bold text-slate-900">AMOUNT PAID:</span>
+                    <span id="bill-amount" class="text-2xl font-black text-blue-600"></span>
+                </div>
+
+                <div class="pt-4 text-center">
+                    <div class="h-10 w-full bg-[repeating-linear-gradient(90deg,#1e293b_0,#1e293b_2px,transparent_2px,transparent_4px,#1e293b_4px,#1e293b_7px,transparent_7px,transparent_9px)]"></div>
+                    <span class="text-[9px] text-slate-400 uppercase tracking-widest mt-1 block">Scan at Exit Boom Barrier</span>
+                </div>
+            </div>
+
+            <div class="p-4 bg-slate-100 border-t border-slate-200 flex gap-2">
+                <button onclick="window.print()" class="flex-1 py-2.5 rounded-xl bg-white border border-slate-300 font-bold text-slate-800 hover:bg-slate-50 transition">Print Pass</button>
+                <button onclick="closeDigitalBill()" class="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-500 transition">Complete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-300 opacity-0 transform translate-y-4">
+        <div class="bg-slate-900/90 backdrop-blur-md text-white border border-[#164273] px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 font-mono text-xs">
+            <span id="toast-icon">✓</span>
+            <span id="toast-text">Notification</span>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APPLICATION CORE -->
+    <script>
+        /* --- Audio Synthesizer Engine --- */
+        let audioEnabled = true;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function playTone(freq, type = 'sine', duration = 0.15) {
+            if (!audioEnabled) return;
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            document.getElementById('audio-status-icon').innerText = audioEnabled ? '🔊' : '🔇';
+            showToast(audioEnabled ? 'Audio Effects Enabled' : 'Audio Effects Muted');
+            if (audioEnabled) playTone(600, 'sine', 0.1);
+        }
+
+        /* --- Failsafe Splash Screen Dismissal --- */
+        let isSplashDismissed = false;
+
+        function dismissSplash() {
+            if (isSplashDismissed) return;
+            isSplashDismissed = true;
+
+            const splash = document.getElementById('splash-screen');
+            if (splash) {
+                splash.style.opacity = '0';
+                splash.style.transform = 'scale(1.03)';
+                splash.style.pointerEvents = 'none';
+
+                playTone(523.25, 'sine', 0.2);
+
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                    splash.remove();
+                }, 650);
+            }
+        }
+
+        // Automatic reveal after 2 seconds
+        setTimeout(dismissSplash, 2000);
+
+        /* --- Data State (500 Bays) --- */
+        let parkingData = [];
+        let pastBookings = JSON.parse(localStorage.getItem('ethical_parking_history') || '[]');
+        const prices = { '2wheeler': 20, '4wheeler': 50, 'ev': 60 };
+
+        const fastagWallets = {
+            'MH12AB1234': 850,
+            'MH14DE5678': 420,
+            'MH02XY9999': 300
+        };
+
+        function initData() {
+            parkingData = [];
+            for (let f = 1; f <= 5; f++) {
+                for (let c = 1; c <= 50; c++) {
+                    const id = `F${f}-C${c < 10 ? '0' + c : c}`;
+                    let category = 'standard';
+                    if (c <= 5) category = 'ethical';
+                    else if (c <= 15) category = 'ev';
+
+                    const isOccupied = Math.random() < 0.36;
+                    parkingData.push({
+                        id,
+                        floor: f,
+                        type: 'car',
+                        category,
+                        status: isOccupied ? 'occupied' : 'available',
+                        vehNo: isOccupied ? 'MH ' + (12 + f) + ' ' + String.fromCharCode(65 + (c % 26)) + ' ' + (1000 + c * 37) : null,
+                        duration: isOccupied ? Math.floor(1 + Math.random() * 3) : 0,
+                        sensorDist: isOccupied ? (22 + Math.random() * 10).toFixed(1) : (180 + Math.random() * 20).toFixed(1),
+                        batteryV: (3.8 + Math.random() * 0.4).toFixed(2),
+                        rssi: -50 - Math.floor(Math.random() * 25)
+                    });
+                }
+
+                for (let b = 1; b <= 50; b++) {
+                    const id = `F${f}-B${b < 10 ? '0' + b : b}`;
+                    const isOccupied = Math.random() < 0.28;
+                    parkingData.push({
+                        id,
+                        floor: f,
+                        type: 'bike',
+                        category: 'standard',
+                        status: isOccupied ? 'occupied' : 'available',
+                        vehNo: isOccupied ? 'MH 14 BB ' + (2000 + b * 19) : null,
+                        duration: isOccupied ? 1 : 0,
+                        sensorDist: isOccupied ? (18 + Math.random() * 8).toFixed(1) : (160 + Math.random() * 20).toFixed(1),
+                        batteryV: (3.8 + Math.random() * 0.4).toFixed(2),
+                        rssi: -55 - Math.floor(Math.random() * 20)
+                    });
+                }
+            }
+        }
+        initData();
+
+        /* --- Navigation Switcher --- */
+        let currentFloor = 1;
+        let currentVehicleFilter = 'car';
+        let highlightedSlotId = null;
+
+        function navigate(pageId) {
+            playTone(440, 'sine', 0.08);
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-' + pageId).classList.add('active');
+
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('bg-[#092952]', 'text-white');
+                link.classList.add('text-slate-300');
+                if (link.getAttribute('onclick').includes(pageId)) {
+                    link.classList.add('bg-[#092952]', 'text-white');
+                    link.classList.remove('text-slate-300');
+                }
+            });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (pageId === 'dashboard') renderGrid();
+            if (pageId === 'fastag') updateExitVehicleDropdown();
+        }
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-text').innerText = msg;
+            document.getElementById('toast-icon').innerText = isError ? '⚠' : '✓';
+            toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 opacity-100 transform translate-y-0';
+            setTimeout(() => {
+                toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 opacity-0 transform translate-y-4 pointer-events-none';
+            }, 3200);
+        }
+
+        /* --- Quick Reservation from Hero Bar --- */
+        function handleQuickReserve() {
+            const floor = parseInt(document.getElementById('quick-floor').value);
+            const plate = document.getElementById('quick-plate').value.toUpperCase().trim();
+            const category = document.getElementById('quick-category').value;
+
+            if (!plate) {
+                showToast("Please enter your vehicle license plate!", true);
+                playTone(200, 'sawtooth', 0.3);
+                return;
+            }
+
+            const target = parkingData.find(s => s.floor === floor && s.type === (category === '2wheeler' ? 'bike' : 'car') && s.status === 'available');
+
+            if (!target) {
+                showToast(`Floor 0${floor} is currently full for ${category}. Trying another deck...`, true);
+                return;
+            }
+
+            target.status = 'occupied';
+            target.vehNo = plate;
+            target.duration = 2;
+
+            const total = prices[category] * 2;
+            saveLedgerEntry(target.id, plate, 2, total);
+            showDigitalBill(target.id, plate, 2, total);
+            showToast(`Bay ${target.id} allocated successfully!`);
+            playTone(880, 'triangle', 0.25);
+            renderGrid();
+        }
+
+        /* --- Deck Architectural Floorplan Rendering --- */
+        function setVehicleFilter(type) {
+            playTone(500, 'sine', 0.08);
+            currentVehicleFilter = type;
+            document.getElementById('tab-car').className = type === 'car' ? 'flex-1 py-2.5 rounded-xl font-bold text-xs font-mono transition bg-brand-500/20 text-cyan-300 border border-brand-500/30' : 'flex-1 py-2.5 rounded-xl font-bold text-xs font-mono transition text-slate-300 hover:text-white';
+            document.getElementById('tab-bike').className = type === 'bike' ? 'flex-1 py-2.5 rounded-xl font-bold text-xs font-mono transition bg-brand-500/20 text-cyan-300 border border-brand-500/30' : 'flex-1 py-2.5 rounded-xl font-bold text-xs font-mono transition text-slate-300 hover:text-white';
+            renderGrid();
+        }
+
+        function setFloorFilter(floor) {
+            playTone(550, 'sine', 0.08);
+            currentFloor = floor;
+            document.querySelectorAll('.floor-btn').forEach((btn, idx) => {
+                btn.className = (idx + 1 === floor) 
+                    ? 'floor-btn flex-1 min-w-[75px] py-2.5 px-3 rounded-xl font-bold text-xs font-mono transition bg-brand-500 text-white shadow-md'
+                    : 'floor-btn flex-1 min-w-[75px] py-2.5 px-3 rounded-xl font-bold text-xs font-mono transition text-slate-300 hover:text-white hover:bg-[#092952]';
+            });
+            renderGrid();
+        }
+
+        function createBayElement(slot) {
+            const card = document.createElement('div');
+            let borderStyle = 'border-emerald-500/30 hover:border-emerald-400 bg-emerald-950/10 text-emerald-400';
+            let ledColor = 'bg-emerald-400 text-emerald-400';
+            let statusLabel = 'OPEN';
+
+            if (slot.status === 'occupied') {
+                borderStyle = 'border-danger/40 bg-rose-950/20 text-rose-400 opacity-90';
+                ledColor = 'bg-danger text-danger';
+                statusLabel = 'OCCUPIED';
+            } else {
+                if (slot.category === 'ethical') {
+                    borderStyle = 'border-purple-500/40 hover:border-purple-400 bg-purple-950/20 text-purple-300';
+                    ledColor = 'bg-purple-400 text-purple-400';
+                    statusLabel = 'PRIORITY';
+                } else if (slot.category === 'ev') {
+                    borderStyle = 'border-amber-500/40 hover:border-amber-400 bg-amber-950/20 text-amber-300';
+                    ledColor = 'bg-amber-400 text-amber-400';
+                    statusLabel = 'EV CHARGE';
+                }
+            }
+
+            const isBeacon = (slot.id === highlightedSlotId);
+            card.id = `bay-node-${slot.id}`;
+            card.className = `bay-card p-3 rounded-2xl border ${borderStyle} ${isBeacon ? 'slot-target-beacon' : ''} cursor-pointer flex flex-col justify-between h-24 select-none relative overflow-hidden transition`;
+            card.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span class="font-mono font-bold text-xs text-white">${slot.id}</span>
+                    <span class="w-2 h-2 rounded-full ${ledColor} led-glow"></span>
+                </div>
+                <div>
+                    <div class="text-[10px] font-mono tracking-wider uppercase font-bold">${statusLabel}</div>
+                    <div class="text-[9px] font-mono text-slate-300 truncate">${slot.status === 'occupied' ? (slot.vehNo || 'MH 12 ACTIVE') : 'VACANT'}</div>
+                </div>
+            `;
+
+            card.onclick = () => {
+                if (slot.status === 'available') openDashBookingModal(slot);
+                else openOccupiedModal(slot);
+            };
+            return card;
+        }
+
+        function createAisleDivider(name, direction) {
+            const lane = document.createElement('div');
+            lane.className = 'roadway-aisle py-2 px-4 rounded-xl border border-[#164273] bg-[#051f42]/70 flex items-center justify-between text-[11px] font-mono font-bold text-slate-300 select-none';
+            lane.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="text-cyan-400">${direction}</span>
+                    <span class="tracking-wider uppercase text-slate-200">${name}</span>
+                </div>
+                <div class="flex items-center gap-4 text-[10px] text-cyan-200/80">
+                    <span>MAX SPEED 10 KM/H</span>
+                    <span>HEADLIGHTS ON</span>
+                </div>
+            `;
+            return lane;
+        }
+
+        function renderGrid() {
+            const container = document.getElementById('deck-aisle-container');
+            container.innerHTML = '';
+
+            const filteredSlots = parkingData.filter(s => s.floor === currentFloor && s.type === currentVehicleFilter);
+            const vacantCount = filteredSlots.filter(s => s.status === 'available').length;
+
+            document.getElementById('current-deck-display').innerText = `Floor 0${currentFloor} • ${currentVehicleFilter === 'car' ? 'Four-Wheeler Deck' : 'Two-Wheeler Deck'}`;
+            document.getElementById('current-deck-vacant').innerText = vacantCount;
+
+            const totalVacant = parkingData.filter(s => s.status === 'available').length;
+            document.getElementById('header-available-badge').innerText = `${totalVacant} Free`;
+
+            const rowA = filteredSlots.slice(0, 16);
+            const rowB = filteredSlots.slice(16, 34);
+            const rowC = filteredSlots.slice(34, 50);
+
+            const gridA = document.createElement('div');
+            gridA.className = 'grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2.5';
+            rowA.forEach(s => gridA.appendChild(createBayElement(s)));
+            container.appendChild(gridA);
+
+            container.appendChild(createAisleDivider('DRIVEWAY AISLE 01 (ENTRANCE ACCESS)', '➜ ONE WAY'));
+
+            const gridB = document.createElement('div');
+            gridB.className = 'grid grid-cols-2 sm:grid-cols-4 md:grid-cols-9 gap-2.5';
+            rowB.forEach(s => gridB.appendChild(createBayElement(s)));
+            container.appendChild(gridB);
+
+            container.appendChild(createAisleDivider('DRIVEWAY AISLE 02 (RAMP & EXIT ACCESS)', '➜ ONE WAY'));
+
+            const gridC = document.createElement('div');
+            gridC.className = 'grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2.5';
+            rowC.forEach(s => gridC.appendChild(createBayElement(s)));
+            container.appendChild(gridC);
+        }
+
+        /* --- Dashboard Booking Modal --- */
+        let activeModalSlot = null;
+
+        function openDashBookingModal(slot) {
+            playTone(600, 'sine', 0.1);
+            activeModalSlot = slot;
+            document.getElementById('dash-slot-id').innerText = slot.id;
+            document.getElementById('dash-hidden-slot').value = slot.id;
+            document.getElementById('dash-veh-no').value = '';
+            document.getElementById('dash-category-badge').innerText = slot.category.toUpperCase();
+
+            const permitGroup = document.getElementById('dash-permit-group');
+            if (slot.category === 'ethical') permitGroup.classList.remove('hidden');
+            else permitGroup.classList.add('hidden');
+
+            let base = slot.type === 'bike' ? prices['2wheeler'] : prices['4wheeler'];
+            if (slot.category === 'ev') base = prices['ev'];
+            document.getElementById('dash-duration').setAttribute('data-base', base);
+            updateDashPrice();
+
+            document.getElementById('booking-modal').classList.remove('hidden');
+        }
+
+        function closeDashBookingModal() {
+            document.getElementById('booking-modal').classList.add('hidden');
+        }
+
+        function updateDashPrice() {
+            const base = parseInt(document.getElementById('dash-duration').getAttribute('data-base') || 50);
+            const hrs = parseInt(document.getElementById('dash-duration').value);
+            document.getElementById('dash-live-price').innerText = `₹ ${base * hrs}`;
+        }
+
+        function handleDashBooking(e) {
+            e.preventDefault();
+            if (activeModalSlot.category === 'ethical') {
+                const permit = document.getElementById('dash-permit-id').value.trim();
+                if (!permit) {
+                    showToast("Valid Disability Permit ID required for Ethical Bays!", true);
+                    playTone(200, 'sawtooth', 0.3);
+                    return;
+                }
+            }
+
+            const vehNo = document.getElementById('dash-veh-no').value.toUpperCase().trim();
+            const hrs = parseInt(document.getElementById('dash-duration').value);
+            const base = parseInt(document.getElementById('dash-duration').getAttribute('data-base'));
+            const total = base * hrs;
+
+            activeModalSlot.status = 'occupied';
+            activeModalSlot.vehNo = vehNo;
+            activeModalSlot.duration = hrs;
+            activeModalSlot.sensorDist = '28.1';
+
+            closeDashBookingModal();
+            renderGrid();
+            saveLedgerEntry(activeModalSlot.id, vehNo, hrs, total);
+            showDigitalBill(activeModalSlot.id, vehNo, hrs, total);
+            playTone(880, 'triangle', 0.25);
+        }
+
+        /* --- Occupied Bay Inspector --- */
+        let activeOccupiedSlot = null;
+
+        function openOccupiedModal(slot) {
+            playTone(320, 'square', 0.12);
+            activeOccupiedSlot = slot;
+            document.getElementById('occ-slot-id').innerText = `Bay ${slot.id} (Floor 0${slot.floor})`;
+            document.getElementById('occ-sensor-val').innerText = `${slot.sensorDist} cm`;
+            document.getElementById('occ-battery-val').innerText = `${slot.batteryV} V`;
+            document.getElementById('occ-rssi-val').innerText = `${slot.rssi} dBm`;
+            document.getElementById('occ-veh-val').innerText = slot.vehNo || 'MH 14 REG-PENDING';
+            document.getElementById('occ-cat-val').innerText = `${slot.category.toUpperCase()} (${slot.type.toUpperCase()})`;
+            document.getElementById('occ-dur-val').innerText = `${slot.duration || 1} Hour(s)`;
+
+            const evGauge = document.getElementById('occ-ev-gauge');
+            if (slot.category === 'ev') evGauge.classList.remove('hidden');
+            else evGauge.classList.add('hidden');
+
+            document.getElementById('occupied-modal').classList.remove('hidden');
+        }
+
+        function closeOccupiedModal() {
+            document.getElementById('occupied-modal').classList.add('hidden');
+        }
+
+        function vacateOccupiedSlot() {
+            if (!activeOccupiedSlot) return;
+            activeOccupiedSlot.status = 'available';
+            activeOccupiedSlot.vehNo = null;
+            activeOccupiedSlot.sensorDist = '195.0';
+
+            closeOccupiedModal();
+            renderGrid();
+            showToast(`Bay ${activeOccupiedSlot.id} liberated and online.`);
+            playTone(660, 'sine', 0.2);
+        }
+
+        /* --- FASTag Engine --- */
+        function scanFastagEntry(plate) {
+            playTone(600, 'sine', 0.1);
+            if (!plate) return;
+            plate = plate.toUpperCase().trim();
+
+            const vacantBay = parkingData.find(s => s.status === 'available' && s.type === 'car');
+            if (!vacantBay) {
+                showToast("Parking Facility Full! Entry gate locked.", true);
+                return;
+            }
+
+            vacantBay.status = 'occupied';
+            vacantBay.vehNo = plate;
+            vacantBay.duration = 2;
+
+            document.getElementById('entry-boom-arm').classList.add('barrier-raised');
+            document.getElementById('entry-barrier-light').className = 'w-3.5 h-3.5 rounded-full bg-cyan-400 led-glow text-cyan-400';
+            document.getElementById('entry-status-badge').innerText = 'BARRIER: RAISED (1.8s)';
+
+            document.getElementById('entry-terminal-log').innerHTML = `
+                <div class="text-left w-full space-y-1">
+                    <span class="text-cyan-300 font-bold">✓ FASTag RFID DETECTED: ${plate}</span>
+                    <div>Auto-Assigned: <span class="text-white font-bold">${vacantBay.id}</span> (Floor ${vacantBay.floor})</div>
+                    <div class="text-slate-300">Security barrier raised. Drive ahead safely.</div>
+                </div>
+            `;
+
+            showToast(`FASTag: Access Granted to ${plate}`);
+            playTone(880, 'triangle', 0.3);
+
+            setTimeout(() => {
+                document.getElementById('entry-boom-arm').classList.remove('barrier-raised');
+                document.getElementById('entry-barrier-light').className = 'w-3.5 h-3.5 rounded-full bg-rose-500 led-glow text-rose-500';
+                document.getElementById('entry-status-badge').innerText = 'BARRIER: CLOSED';
+                renderGrid();
+            }, 3000);
+        }
+
+        function updateExitVehicleDropdown() {
+            const select = document.getElementById('exit-vehicle-select');
+            select.innerHTML = '<option value="">-- Choose Parked Vehicle --</option>';
+
+            parkingData.filter(s => s.status === 'occupied' && s.vehNo).slice(0, 15).forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.vehNo;
+                opt.innerText = `${s.vehNo} (Bay ${s.id})`;
+                select.appendChild(opt);
+            });
+        }
+
+        function scanFastagExit() {
+            const select = document.getElementById('exit-vehicle-select');
+            const plate = select.value;
+            if (!plate) {
+                showToast("Please select a vehicle at the exit gate.", true);
+                return;
+            }
+
+            const slot = parkingData.find(s => s.vehNo === plate);
+            const toll = 50.00;
+            const currentBal = fastagWallets[plate] || 350.00;
+            const remaining = currentBal - toll;
+            fastagWallets[plate] = remaining;
+
+            if (slot) {
+                slot.status = 'available';
+                slot.vehNo = null;
+            }
+
+            document.getElementById('exit-boom-arm').classList.add('barrier-raised');
+            document.getElementById('exit-barrier-light').className = 'w-3.5 h-3.5 rounded-full bg-cyan-400 led-glow text-cyan-400';
+            document.getElementById('exit-status-badge').innerText = 'BARRIER: RAISED (1.5s)';
+
+            document.getElementById('exit-terminal-log').innerHTML = `
+                <div class="text-left w-full space-y-1">
+                    <span class="text-cyan-300 font-bold">✓ AUTO-TOLL DEDUCTED: ₹ ${toll}</span>
+                    <div>Vehicle: <span class="text-white font-bold">${plate}</span></div>
+                    <div class="text-slate-300">FASTag Balance Remainder: ₹ ${remaining.toFixed(2)}</div>
+                </div>
+            `;
+
+            showToast(`FASTag Toll Deducted: ₹${toll} from ${plate}`);
+            playTone(880, 'triangle', 0.25);
+
+            setTimeout(() => {
+                document.getElementById('exit-boom-arm').classList.remove('barrier-raised');
+                document.getElementById('exit-barrier-light').className = 'w-3.5 h-3.5 rounded-full bg-rose-500 led-glow text-rose-500';
+                document.getElementById('exit-status-badge').innerText = 'BARRIER: CLOSED';
+                renderGrid();
+                updateExitVehicleDropdown();
+            }, 3000);
+        }
+
+        /* --- "Find My Car" Locator --- */
+        let foundSlotGlobal = null;
+
+        function locateCar() {
+            playTone(550, 'sine', 0.1);
+            const query = document.getElementById('find-car-input').value.toUpperCase().trim();
+            if (!query) return;
+
+            const slot = parkingData.find(s => s.vehNo && s.vehNo.replace(/\s+/g, '').includes(query.replace(/\s+/g, '')));
+            const resultBox = document.getElementById('find-car-result');
+
+            if (!slot) {
+                showToast(`Vehicle plate "${query}" not located!`, true);
+                playTone(200, 'sawtooth', 0.3);
+                resultBox.classList.add('hidden');
+                return;
+            }
+
+            foundSlotGlobal = slot;
+            highlightedSlotId = slot.id;
+
+            document.getElementById('find-veh-plate').innerText = slot.vehNo;
+            document.getElementById('find-veh-slot').innerText = `Floor ${slot.floor} • Bay ${slot.id}`;
+            document.getElementById('find-veh-cat').innerText = `${slot.category.toUpperCase()} (${slot.type.toUpperCase()})`;
+            document.getElementById('find-veh-time').innerText = `${slot.duration || 1} Hr 20 Mins`;
+            document.getElementById('find-veh-due').innerText = `₹ ${prices[slot.type] * (slot.duration || 1)}`;
+            document.getElementById('find-veh-directions').innerText = 
+                `Take Elevator Core B to Floor ${slot.floor}. Exit right into Driveway Aisle 01. Walk 20 meters toward the LED beacon; Bay ${slot.id} is situated on your left hand side.`;
+
+            resultBox.classList.remove('hidden');
+            showToast(`Vehicle located on Floor 0${slot.floor}!`);
+            playTone(880, 'triangle', 0.25);
+        }
+
+        function jumpToFoundSlot() {
+            if (!foundSlotGlobal) return;
+            currentFloor = foundSlotGlobal.floor;
+            currentVehicleFilter = foundSlotGlobal.type;
+            navigate('dashboard');
+            setTimeout(() => {
+                const el = document.getElementById(`bay-node-${foundSlotGlobal.id}`);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 400);
+        }
+
+        /* --- Manual Booking Desk Logic --- */
+        function checkIfEthicalSlot(val) {
+            const slotId = val.toUpperCase().trim();
+            const slot = parkingData.find(s => s.id === slotId);
+            const permitGroup = document.getElementById('ethical-permit-group');
+            if (slot && slot.category === 'ethical') {
+                permitGroup.classList.remove('hidden');
+            } else {
+                permitGroup.classList.add('hidden');
+            }
+        }
+
+        function updateDirectPrice() {
+            const type = document.getElementById('direct-vehicle-type').value;
+            const hrs = parseInt(document.getElementById('direct-duration').value);
+            const total = prices[type] * hrs;
+            document.getElementById('direct-live-price').innerText = `₹ ${total}`;
+
+            const upiString = encodeURIComponent(`upi://pay?pa=ethicalparking@upi&pn=EthicalParking&am=${total}&cu=INR&tn=BayReserve`);
+            document.getElementById('upi-qr-preview').src = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${upiString}`;
+        }
+
+        function handleDirectBooking(e) {
+            e.preventDefault();
+            const slotId = document.getElementById('direct-slot-id').value.toUpperCase().trim();
+            const vehNo = document.getElementById('direct-vehicle-no').value.toUpperCase().trim();
+            const type = document.getElementById('direct-vehicle-type').value;
+            const hrs = parseInt(document.getElementById('direct-duration').value);
+            const total = prices[type] * hrs;
+
+            const target = parkingData.find(s => s.id === slotId);
+            if (!target) {
+                showToast(`Slot "${slotId}" does not exist.`, true);
+                playTone(200, 'sawtooth', 0.3);
+                return;
+            }
+
+            if (target.status === 'occupied') {
+                showToast(`Bay ${slotId} is already occupied!`, true);
+                playTone(200, 'sawtooth', 0.3);
+                return;
+            }
+
+            if (target.category === 'ethical') {
+                const permit = document.getElementById('direct-permit-id').value.trim();
+                if (!permit) {
+                    showToast("Valid Disability Permit ID required for Ethical Bays!", true);
+                    playTone(200, 'sawtooth', 0.3);
+                    return;
+                }
+            }
+
+            target.status = 'occupied';
+            target.vehNo = vehNo;
+            target.duration = hrs;
+
+            saveLedgerEntry(target.id, vehNo, hrs, total);
+            showDigitalBill(target.id, vehNo, hrs, total);
+            e.target.reset();
+            updateDirectPrice();
+            renderGrid();
+            playTone(880, 'triangle', 0.25);
+        }
+
+        /* --- Ledger & Printable Pass --- */
+        function saveLedgerEntry(slotId, vehicle, duration, total) {
+            const date = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+            const txn = 'TXN-' + Math.floor(10000000 + Math.random() * 90000000);
+            pastBookings.unshift({ txn, slotId, vehicle, duration, total, date });
+            localStorage.setItem('ethical_parking_history', JSON.stringify(pastBookings));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('history-container');
+            const empty = document.getElementById('empty-history');
+            if (pastBookings.length > 0) empty.style.display = 'none';
+            else empty.style.display = 'block';
+
+            Array.from(container.children).forEach(child => {
+                if (child.id !== 'empty-history') container.removeChild(child);
+            });
+
+            pastBookings.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "p-4 rounded-2xl bg-[#051f42] border border-[#164273] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 font-mono text-xs hover:border-cyan-400 transition";
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-2 py-0.5 rounded bg-brand-500/20 text-cyan-300 font-bold font-mono text-[10px]">BAY ${item.slotId}</span>
+                            <span class="text-cyan-200/60 text-[10px]">${item.txn}</span>
+                        </div>
+                        <div class="font-bold text-white text-sm uppercase">${item.vehicle}</div>
+                        <div class="text-[10px] text-slate-300 mt-0.5">${item.date}</div>
+                    </div>
+                    <div class="text-right w-full sm:w-auto border-t sm:border-0 border-[#164273] pt-2 sm:pt-0">
+                        <div class="text-base font-black text-cyan-300">₹ ${item.total}</div>
+                        <div class="text-[10px] text-slate-300">${item.duration} Hour(s) Duration</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function clearHistory() {
+            pastBookings = [];
+            localStorage.removeItem('ethical_parking_history');
+            renderHistory();
+            showToast('Pass Ledger Reset.');
+            playTone(300, 'sine', 0.1);
+        }
+
+        function showDigitalBill(slotId, vehicleNo, hours, total) {
+            document.getElementById('bill-slot').innerText = slotId;
+            document.getElementById('bill-vehicle').innerText = vehicleNo;
+            document.getElementById('bill-duration').innerText = `${hours} Hour(s)`;
+            document.getElementById('bill-amount').innerText = `₹ ${total}`;
+            document.getElementById('bill-date').innerText = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+            document.getElementById('bill-id').innerText = pastBookings[0] ? pastBookings[0].txn : 'TXN-DIRECT';
+            document.getElementById('bill-modal').classList.remove('hidden');
+        }
+
+        function closeDigitalBill() {
+            document.getElementById('bill-modal').classList.add('hidden');
+            showToast('Digital pass stored in session ledger.');
+        }
+
+        /* --- Violation Alert Simulation --- */
+        function triggerSimulatedViolation() {
+            playTone(300, 'sawtooth', 0.4);
+            const banner = document.getElementById('violation-banner');
+            document.getElementById('violation-text').innerText = 'SECURITY VIOLATION: Unauthorized vehicle parked in Accessible Bay F1-C03! Compliance penalty ₹500 imposed.';
+            banner.classList.remove('hidden');
+            showToast('ACCESSIBILITY COMPLIANCE BREACH DETECTED!', true);
+        }
+
+        function dismissViolation() {
+            document.getElementById('violation-banner').classList.add('hidden');
+        }
+
+        /* --- Real-Time IoT Simulation Engine --- */
+        let simInterval = null;
+        function toggleSimulation() {
+            const dot = document.getElementById('sim-status-dot');
+            const text = document.getElementById('sim-btn-text');
+
+            if (simInterval) {
+                clearInterval(simInterval);
+                simInterval = null;
+                dot.className = 'w-2 h-2 rounded-full bg-slate-400';
+                text.innerText = 'Start IoT Sim';
+                showToast('Simulation stopped.');
+            } else {
+                simInterval = setInterval(() => {
+                    const rnd = Math.floor(Math.random() * parkingData.length);
+                    const slot = parkingData[rnd];
+
+                    if (slot.status === 'available') {
+                        slot.status = 'occupied';
+                        slot.vehNo = 'MH ' + (12 + slot.floor) + ' SIM ' + Math.floor(1000 + Math.random() * 9000);
+                        slot.sensorDist = (21 + Math.random() * 10).toFixed(1);
+                    } else {
+                        slot.status = 'available';
+                        slot.vehNo = null;
+                        slot.sensorDist = '198.5';
+                    }
+
+                    if (slot.floor === currentFloor && slot.type === currentVehicleFilter) {
+                        renderGrid();
+                    }
+                }, 1400);
+
+                dot.className = 'w-2 h-2 rounded-full bg-cyan-400 led-glow text-cyan-400 animate-ping';
+                text.innerText = 'Sim Active';
+                showToast('Real-time Sensor Stream Running!');
+            }
+        }
+
+        // Initialize Everything
+        renderGrid();
+        renderHistory();
+        updateDirectPrice();
+        // --- Updated Code to Talk to Python Backend ---
+
+// 1. Fetch past bookings from the Python SQLite database when the page loads
+async function fetchServerLedger() {
+    try {
+        const response = await fetch('/api/ledger');
+        const data = await response.json();
+        pastBookings = data;
+        renderHistory(); // Refresh your table/ledger UI
+    } catch (err) {
+        console.error("Could not load ledger from server:", err);
+    }
+}
+
+// 2. Save booking to Python backend instead of just browser memory
+async function saveLedgerEntry(slotId, vehicle, duration, total) {
+    const payload = {
+        slotId: slotId,
+        vehicle: vehicle,
+        duration: duration + " Hour(s)",
+        total: total
+    };
+
+    try {
+        const response = await fetch('/api/park', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            console.log("Saved to SQLite Database via Python!", result.record);
+            fetchServerLedger(); // Refresh the ledger list
+        }
+    } catch (err) {
+        console.error("Backend connection error:", err);
+    }
+}
+
+// 3. Clear history via Python API
+async function clearHistory() {
+    try {
+        await fetch('/api/ledger', { method: 'DELETE' });
+        pastBookings = [];
+        renderHistory();
+        showToast('Pass Ledger Reset.');
+    } catch (err) {
+        console.error("Failed to clear ledger:", err);
+    }
+}
+
+// 4. Automatically load the database records when the page first opens
+window.addEventListener('DOMContentLoaded', () => {
+    fetchServerLedger();
+});
+    </script>
+</body>
+</html>
