@@ -1,5 +1,11 @@
 [
   {
+    "vehicle": "SHUDUFIFUDIF",
+    "slotId": "F1-C01",
+    "duration": "2 Hour(s)",
+    "total": 100
+  },
+  {
     "vehicle": "MH 12 FM 2869",
     "slotId": "F1-C11",
     "duration": "1 Hour(s)",
